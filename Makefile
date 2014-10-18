@@ -16,6 +16,8 @@ NAME = Shuffling Zombie Juror
 # o  print "Entering directory ...";
 MAKEFLAGS += -rR --no-print-directory
 
+include version_spec.mk
+
 # Avoid funny character set dependencies
 unexport LC_ALL
 LC_COLLATE=C
@@ -873,10 +875,14 @@ endif
 prepare2: prepare3 outputmakefile asm-generic
 
 prepare1: prepare2 $(version_h) include/generated/utsrelease.h \
-                   include/config/auto.conf
+                   include/config/auto.conf include/generated/version_spec.h
 	$(cmd_crmodverdir)
 
 archprepare: archheaders archscripts prepare1 scripts_basic
+
+include/generated/version_spec.h: version_spec.mk FORCE
+	@echo '  CHK     $@'
+	@echo '#define NOVENTDS_VERSION "$(NOVENTDS_VERSION)"' >$@
 
 prepare0: archprepare FORCE
 	$(Q)$(MAKE) $(build)=.
