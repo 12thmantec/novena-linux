@@ -490,6 +490,15 @@ config INPUT_GPIO_ROTARY_ENCODER
 	  To compile this driver as a module, choose M here: the
 	  module will be called rotary_encoder.
 
+config INPUT_NOVDS_WHEEL
+	tristate "NOventDS misc input device driver"
+	depends on GPIOLIB 
+	help
+	  NOventDS misc input device driver
+	
+	  To compile this driver as a module, choose M here: the
+	  module will be called noventds_input.
+
 config INPUT_RB532_BUTTON
 	tristate "Mikrotik Routerboard 532 button interface"
 	depends on MIKROTIK_RB532

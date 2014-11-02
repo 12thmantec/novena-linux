@@ -1,0 +1,7 @@
+#!/bin/sh
+make -j4 zImage dtbs \
+    CROSS_COMPILE=arm-none-linux-gnueabi- \
+    ARCH=arm \
+	&& echo "Constructing bootloader..." \
+	&& cat arch/arm/boot/zImage > bootloader \
+	&& cat arch/arm/boot/dts/imx6dl-novena-aqs.dtb >> bootloader
