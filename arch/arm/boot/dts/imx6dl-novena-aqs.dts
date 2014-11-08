@@ -121,7 +121,7 @@
 
 	rotary@0 {
 		compatible = "rotary-encoder";
-		gpios = <&gpio2 21 0>, <&gpio1 02 0>;
+		gpios = <&gpio2 21 0>, <&gpio1 02 0>, <&gpio2 19 0>;
 		linux,axis = <8>; /* REL_WHEEL */
 		rotary-encoder,relative-axis;
 		rotary-encoder,half-period;
@@ -645,6 +645,15 @@
 		VDDD-supply = <&vgen3_reg>;
 		VDDA-supply = <&reg_2p5v>;
 		VDDIO-supply = <&reg_3p3v>;
+	};
+
+	msp430@68 {
+		compatible = "novds,msp430";
+		status = "okay";
+		reg = <0x68>;
+		irq-over-gpio;
+		irq-gpios = <&gpio4 18 0>;
+		irq-trigger = <0x1>;
 	};
 };
 

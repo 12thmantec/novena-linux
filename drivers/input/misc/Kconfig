@@ -497,7 +497,16 @@ config INPUT_NOVDS_WHEEL
 	  NOventDS misc input device driver
 	
 	  To compile this driver as a module, choose M here: the
-	  module will be called noventds_input.
+	  module will be called novds_wheel.
+
+config INPUT_NOVDS_MSP430
+	tristate "NOventDS misc input device driver(for power key, and other function of msp430)"
+	depends on GPIOLIB 
+	help
+	  NOventDS misc input device driver
+	
+	  To compile this driver as a module, choose M here: the
+	  module will be called novds_msp430.
 
 config INPUT_RB532_BUTTON
 	tristate "Mikrotik Routerboard 532 button interface"

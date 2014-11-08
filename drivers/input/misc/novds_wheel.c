@@ -39,6 +39,10 @@ struct rotary_encoder {
 	unsigned int irq_a;
 	unsigned int irq_b;
 
+    unsigned int gpio_enter;
+	unsigned int irq_enter;
+    unsigned int inverted_enter;
+
 	bool armed;
 	unsigned char dir;	/* 0 - clockwise, 1 - CCW */
 
@@ -117,6 +121,17 @@ static irqreturn_t rotary_encoder_irq(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
+static irqreturn_t rotary_encoder_enter_irq(int irq, void *dev_id)
+{
+	struct rotary_encoder *encoder = dev_id;
+	int state;
+
+    state = gpio_get_value(encoder->gpio_enter);
+    input_report_key(encoder->input, KEY_ENTER, !state);
+    input_sync(encoder->input);
+
+	return IRQ_HANDLED;
+}
 
 static irqreturn_t rotary_encoder_half_period_irq(int irq, void *dev_id)
 {
@@ -150,7 +165,8 @@ static struct of_device_id rotary_encoder_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, rotary_encoder_of_match);
 
-static struct rotary_encoder_platform_data *rotary_encoder_parse_dt(struct device *dev)
+static struct rotary_encoder_platform_data *rotary_encoder_parse_dt(struct device *dev,
+        struct rotary_encoder *encoder)
 {
 	const struct of_device_id *of_id =
 				of_match_device(rotary_encoder_of_match, dev);
@@ -175,6 +191,9 @@ static struct rotary_encoder_platform_data *rotary_encoder_parse_dt(struct devic
 	pdata->gpio_b = of_get_gpio_flags(np, 1, &flags);
 	pdata->inverted_b = flags & OF_GPIO_ACTIVE_LOW;
 
+	encoder->gpio_enter = of_get_gpio_flags(np, 2, &flags);
+	encoder->inverted_enter = flags & OF_GPIO_ACTIVE_LOW;
+
 	pdata->relative_axis = !!of_get_property(np,
 					"rotary-encoder,relative-axis", NULL);
 	pdata->rollover = !!of_get_property(np,
@@ -186,7 +205,7 @@ static struct rotary_encoder_platform_data *rotary_encoder_parse_dt(struct devic
 }
 #else
 static inline struct rotary_encoder_platform_data *
-rotary_encoder_parse_dt(struct device *dev)
+rotary_encoder_parse_dt(struct device *dev, struct rotary_encoder *encoder)
 {
 	return NULL;
 }
@@ -201,18 +220,21 @@ static int rotary_encoder_probe(struct platform_device *pdev)
 	irq_handler_t handler;
 	int err;
 
+	encoder = kzalloc(sizeof(struct rotary_encoder), GFP_KERNEL);
 	if (!pdata) {
-		pdata = rotary_encoder_parse_dt(dev);
-		if (IS_ERR(pdata))
+		pdata = rotary_encoder_parse_dt(dev, encoder);
+		if (IS_ERR(pdata)) {
+            kfree(encoder);
 			return PTR_ERR(pdata);
+        }
 
 		if (!pdata) {
 			dev_err(dev, "missing platform data\n");
+            kfree(encoder);
 			return -EINVAL;
 		}
 	}
 
-	encoder = kzalloc(sizeof(struct rotary_encoder), GFP_KERNEL);
 	input = input_allocate_device();
 	if (!encoder || !input) {
 		err = -ENOMEM;
@@ -229,6 +251,8 @@ static int rotary_encoder_probe(struct platform_device *pdev)
 	if (pdata->relative_axis) {
 		set_bit(KEY_F7, input->keybit); //turn the knob to clockwise rotation
 		set_bit(KEY_F8, input->keybit); //turn the knob to counterclockwise rotation
+        /* for knob press key */
+        set_bit(KEY_ENTER, input->keybit);
 	    input->evbit[0] = BIT_MASK(EV_KEY);
 	} else {
 		input->evbit[0] = BIT_MASK(EV_ABS);
@@ -249,8 +273,15 @@ static int rotary_encoder_probe(struct platform_device *pdev)
 		goto exit_free_gpio_a;
 	}
 
+	err = gpio_request_one(encoder->gpio_enter, GPIOF_IN, dev_name(dev));
+	if (err) {
+		dev_err(dev, "unable to request GPIO %d\n", encoder->gpio_enter);
+		goto exit_free_gpio_b;
+	}
+
 	encoder->irq_a = gpio_to_irq(pdata->gpio_a);
 	encoder->irq_b = gpio_to_irq(pdata->gpio_b);
+	encoder->irq_enter = gpio_to_irq(encoder->gpio_enter);
 
 	/* request the IRQs */
 	if (pdata->half_period) {
@@ -265,7 +296,7 @@ static int rotary_encoder_probe(struct platform_device *pdev)
 			  DRV_NAME, encoder);
 	if (err) {
 		dev_err(dev, "unable to request IRQ %d\n", encoder->irq_a);
-		goto exit_free_gpio_b;
+		goto exit_free_gpio_enter;
 	}
 
 	err = request_irq(encoder->irq_b, handler,
@@ -276,20 +307,32 @@ static int rotary_encoder_probe(struct platform_device *pdev)
 		goto exit_free_irq_a;
 	}
 
+	err = request_irq(encoder->irq_enter, rotary_encoder_enter_irq,
+			  IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+			  DRV_NAME, encoder);
+	if (err) {
+		dev_err(dev, "unable to request IRQ %d\n", encoder->irq_enter);
+		goto exit_free_irq_b;
+	}
+
 	err = input_register_device(input);
 	if (err) {
 		dev_err(dev, "failed to register input device\n");
-		goto exit_free_irq_b;
+		goto exit_free_irq_enter;
 	}
 
 	platform_set_drvdata(pdev, encoder);
 
 	return 0;
 
+exit_free_irq_enter:
+	free_irq(encoder->irq_enter, encoder);
 exit_free_irq_b:
 	free_irq(encoder->irq_b, encoder);
 exit_free_irq_a:
 	free_irq(encoder->irq_a, encoder);
+exit_free_gpio_enter:
+	gpio_free(encoder->gpio_enter);
 exit_free_gpio_b:
 	gpio_free(pdata->gpio_b);
 exit_free_gpio_a:
