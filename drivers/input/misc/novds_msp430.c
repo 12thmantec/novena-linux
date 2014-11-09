@@ -41,7 +41,7 @@
 #define NOVDS_MSP430_MODE               0x81
 #define NOVDS_MSP430_ADC_H              0x82
 #define NOVDS_MSP430_ADC_L              0x83
-#define NOVDS_MSP430_AC_DETECT          0x84
+#define NOVDS_MSP430_AC_ONLINE          0x84
 #define NOVDS_MSP430_POWER_KEY          0x85
 #define NOVDS_MSP430_POWER_OFF          0x86
 
@@ -52,6 +52,8 @@ struct novds_msp430 {
     int irq_gpio;
     int irq;
 };
+
+static struct novds_msp430 g_novds_msp430;
 
 /*
  * Write a byte to the MSP430
@@ -130,26 +132,47 @@ static irqreturn_t msp430_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int hello;  
-static ssize_t hello_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)  
+static ssize_t novds_msp430_show_aconline(struct kobject *kobj, 
+        struct kobj_attribute *attr, char *buf)  
 {  
-    return sprintf(buf, "%d\n",hello);  
+	u8 reg = 1;
+
+	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_AC_ONLINE, &reg);
+
+    return sprintf(buf, "%d", !!reg);
+}  
+static ssize_t novds_msp430_show_battery(struct kobject *kobj, 
+        struct kobj_attribute *attr, char *buf)  
+{  
+	u8 h, l;
+    unsigned short battery = 0;
+    static int cache = 0;
+
+	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_H, &h);
+	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_L, &l);
+
+    battery = (h << 8) | (l << 0);
+
+    if (battery == 0)
+        battery = cache;
+
+    cache = battery;
+
+    return sprintf(buf, "%d", battery);
 }  
 
-static ssize_t hello_store(struct kobject *kobj, struct kobj_attribute *attr,  
-                                   const char *buf, size_t count)  
-{  
-    sscanf(buf, "%du", &hello);  
-    return count;  
-}
+
 #define MSP430_ATTR(name, mode, show, store) \
     struct kobj_attribute msp430_attr_##name = __ATTR(name, mode, show, store);
 
-static MSP430_ATTR(hello, 0644, hello_show, hello_store);
+static MSP430_ATTR(aconline, 0444, novds_msp430_show_aconline, NULL);
+static MSP430_ATTR(battery,  0444, novds_msp430_show_battery, NULL);
+
 static struct kobject *novds_msp430_kobj;
 
 static struct attribute *novds_msp430_attrs[] = {
-        &msp430_attr_hello.attr,
+        &msp430_attr_aconline.attr,
+        &msp430_attr_battery.attr,
         NULL,   /* need to NULL terminate the list of attributes */
 };
 
@@ -173,10 +196,7 @@ static int novds_msp430_probe(struct i2c_client *client,
 		return -ENODEV;
 	}
 
-	/* Allocate memory for pdata and input device */
-	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
-	if (!pdata)
-		return -ENOMEM;
+	pdata = &g_novds_msp430;
 
     /* This interrupt is from MSP430, the pin CPU_INT, just for power key */
     pdata->irq_gpio = of_get_named_gpio(np, "irq-gpios", 0);
