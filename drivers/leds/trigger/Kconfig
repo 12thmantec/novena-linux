@@ -108,4 +108,11 @@ config LEDS_TRIGGER_CAMERA
 	  This enables direct flash/torch on/off by the driver, kernel space.
 	  If unsure, say Y.
 
+config LEDS_TRIGGER_NOVDS
+	tristate "LED NOVENTDS Trigger"
+	help
+	  This allows LEDs to be initialised in the ON state.
+	  If unsure, say Y.
+
+
 endif # LEDS_TRIGGERS
