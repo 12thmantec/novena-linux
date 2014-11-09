@@ -35,6 +35,9 @@
 #include <linux/mutex.h>
 #include <linux/platform_data/ads7828.h>
 #include <linux/slab.h>
+#include <linux/kthread.h>
+
+#define __ADS7828_USE_THREAD
 
 /* The ADS7828 registers */
 #define ADS7828_NCH		8	/* 8 channels supported */
@@ -61,6 +64,9 @@ struct ads7828_data {
 	u8 cmd_byte;			/* Command byte without channel bits */
 	unsigned int lsb_resol;		/* Resolution of the ADC sample LSB */
 	s32 (*read_channel)(const struct i2c_client *client, u8 command);
+#ifdef __ADS7828_USE_THREAD
+	struct task_struct *thread;
+#endif
 };
 
 /* Command byte C2,C1,C0 - see datasheet */
@@ -69,6 +75,7 @@ static inline u8 ads7828_cmd_byte(u8 cmd, int ch)
 	return cmd | (((ch >> 1) | (ch & 0x01) << 2) << 4);
 }
 
+#ifndef __ADS7828_USE_THREAD
 /* Update data for the device (all 8 channels) */
 static struct ads7828_data *ads7828_update_device(struct device *dev)
 {
@@ -94,17 +101,47 @@ static struct ads7828_data *ads7828_update_device(struct device *dev)
 
 	return data;
 }
+#endif
 
 /* sysfs callback function */
 static ssize_t ads7828_show_in(struct device *dev, struct device_attribute *da,
 			       char *buf)
 {
 	struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
+#ifdef __ADS7828_USE_THREAD
+	struct i2c_client *client = to_i2c_client(dev);
+	struct ads7828_data *data = i2c_get_clientdata(client);
+#else
 	struct ads7828_data *data = ads7828_update_device(dev);
+#endif
+
 	unsigned int value = DIV_ROUND_CLOSEST(data->adc_input[attr->index] *
 					       data->lsb_resol, 1000);
 
 	return sprintf(buf, "%d\n", value);
+}
+static ssize_t show_in_all(struct device *dev, struct device_attribute *da,
+	char *buf)
+{
+#ifdef __ADS7828_USE_THREAD
+	struct i2c_client *client = to_i2c_client(dev);
+	struct ads7828_data *data = i2c_get_clientdata(client);
+#else
+	struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
+	struct ads7828_data *data = ads7828_update_device(dev);
+#endif
+
+	/* Print value (in mV as specified in sysfs-interface documentation) */
+	return sprintf(buf, "%d %d %d %d %d %d %d %d\n", 
+			0,
+			(data->adc_input[1] * data->lsb_resol) / 1000,
+			(data->adc_input[2] * data->lsb_resol) / 1000,
+			(data->adc_input[3] * data->lsb_resol) / 1000,
+			(data->adc_input[4] * data->lsb_resol) / 1000,
+			(data->adc_input[5] * data->lsb_resol) / 1000,
+			0,
+			0
+			);
 }
 
 static SENSOR_DEVICE_ATTR(in0_input, S_IRUGO, ads7828_show_in, NULL, 0);
@@ -115,6 +152,7 @@ static SENSOR_DEVICE_ATTR(in4_input, S_IRUGO, ads7828_show_in, NULL, 4);
 static SENSOR_DEVICE_ATTR(in5_input, S_IRUGO, ads7828_show_in, NULL, 5);
 static SENSOR_DEVICE_ATTR(in6_input, S_IRUGO, ads7828_show_in, NULL, 6);
 static SENSOR_DEVICE_ATTR(in7_input, S_IRUGO, ads7828_show_in, NULL, 7);
+static SENSOR_DEVICE_ATTR(all_input, S_IRUGO, show_in_all, NULL, 8);
 
 static struct attribute *ads7828_attributes[] = {
 	&sensor_dev_attr_in0_input.dev_attr.attr,
@@ -125,6 +163,7 @@ static struct attribute *ads7828_attributes[] = {
 	&sensor_dev_attr_in5_input.dev_attr.attr,
 	&sensor_dev_attr_in6_input.dev_attr.attr,
 	&sensor_dev_attr_in7_input.dev_attr.attr,
+	&sensor_dev_attr_all_input.dev_attr.attr,
 	NULL
 };
 
@@ -136,23 +175,151 @@ static int ads7828_remove(struct i2c_client *client)
 {
 	struct ads7828_data *data = i2c_get_clientdata(client);
 
+#ifdef __ADS7828_USE_THREAD
+	kthread_stop(data->thread);
+#endif
 	hwmon_device_unregister(data->hwmon_dev);
 	sysfs_remove_group(&client->dev.kobj, &ads7828_group);
 
 	return 0;
 }
+#ifdef __ADS7828_USE_THREAD
+struct sma_struct {
+	int *averages;
+	int size;
+	int last_sum;
+	int last_average;
+	int update_index;
+};
+
+struct sma_struct *sma_init(int size, int init_data)
+{
+	struct sma_struct *sma;
+	int i;
+
+	sma = (struct sma_struct *)kzalloc(sizeof(struct sma_struct), GFP_KERNEL);
+
+	sma->averages = (int *)kzalloc(sizeof(int) * size, GFP_KERNEL);
+
+	for (i = 0; i < size; i++)
+		sma->averages[i] = init_data;
+
+	sma->size = size;
+	sma->last_sum = init_data * size;
+	sma->last_average = init_data;
+	sma->update_index = 0;
+
+	return sma;
+}
+void sma_exit(struct sma_struct *sma)
+{
+	kfree(sma->averages);
+	kfree(sma);
+}
+int sma_calc(struct sma_struct *sma, int data)
+{
+	int oldest1;
+	int oldest2;
+	int sum;
+#ifdef DEBUG
+	int i;
+#endif
+
+	oldest1 = sma->averages[sma->update_index];
+
+	if (sma->update_index == sma->size - 1)
+		oldest2 = sma->averages[0];
+	else
+		oldest2 = sma->averages[sma->update_index + 1];
+
+	sma->averages[sma->update_index] = sma->last_average;
+
+	sma->last_sum = sma->last_sum - oldest1 + sma->last_average;
+	sum = sma->last_sum + data - oldest2;
+
+	sma->last_average = sum / sma->size;
+#ifdef DEBUG
+	for (i = 0; i < sma->size; i++)
+		printf("%d ", sma->averages[i]);
+#endif
+
+	sma->update_index = (sma->update_index + 1 == sma->size) ? 0 : sma->update_index + 1;
+
+	return sma->last_average;
+}
+
+static int ads7828_update_data(void *arg)
+{
+	struct sma_struct *sma;
+	unsigned long last_jiffies;
+	struct i2c_client *client = (struct i2c_client *)arg;
+	struct ads7828_data *data = i2c_get_clientdata(client);
+	int period = msecs_to_jiffies(2000);
+	s32 adc_data;
+	u8 cmd;
+	int ch;
+
+#define NO_CHANNEL 2
+	cmd = ads7828_cmd_byte(data->cmd_byte, NO_CHANNEL);
+	adc_data = data->read_channel(client, cmd);
+	sma = sma_init(20, adc_data);
+
+	last_jiffies = jiffies;
+
+	while (!kthread_should_stop()) {
+		if (jiffies - last_jiffies > period) {
+			last_jiffies = jiffies;
+			for (ch = 1; ch < ADS7828_NCH - 1; ch++) {
+				if (ch == NO_CHANNEL)
+					continue;
+
+	            cmd = ads7828_cmd_byte(data->cmd_byte, ch);
+	            adc_data = data->read_channel(client, cmd);
+				if (adc_data < 0)
+					continue;
+				data->adc_input[ch] = adc_data;
+			}
+		}
+	    cmd = ads7828_cmd_byte(data->cmd_byte, NO_CHANNEL);
+	    adc_data = data->read_channel(client, cmd);
+		if (adc_data >= 0) {
+			data->adc_input[NO_CHANNEL] = sma_calc(sma, adc_data);
+		}
+		//printk("adc_data = %d, average = %d\n", adc_data, data->adc_input[NO_CHANNEL]);
+
+		schedule_timeout_interruptible(msecs_to_jiffies(50));
+	}
+	sma_exit(sma);
+	return 0;
+}
+#endif
 
 static int ads7828_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
 	struct ads7828_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct ads7828_data *data;
+    struct device_node *np = client->dev.of_node;
 	int err;
 
 	data = devm_kzalloc(&client->dev, sizeof(struct ads7828_data),
 			    GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
+
+	if (!pdata) {
+		if (!np)
+			return -EINVAL;
+
+		pdata = devm_kzalloc(&client->dev, sizeof(*pdata), GFP_KERNEL);
+		if (!pdata)
+			return -ENOMEM;
+
+        pdata->diff_input = of_property_read_bool(np, "diff_input");
+        pdata->ext_vref = of_property_read_bool(np, "ext_vref");
+	    of_property_read_u32(np, "vref_mv",	&pdata->vref_mv);
+	}
+
 
 	if (pdata) {
 		data->diff_input = pdata->diff_input;
@@ -185,6 +352,9 @@ static int ads7828_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, data);
 	mutex_init(&data->update_lock);
 
+#ifdef __ADS7828_USE_THREAD
+	data->thread = kthread_run(ads7828_update_data, client, "ads7828");
+#endif
 	err = sysfs_create_group(&client->dev.kobj, &ads7828_group);
 	if (err)
 		return err;

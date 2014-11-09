@@ -514,6 +514,14 @@
 		status = "okay";
 		reg = <0x68>;
 	};
+	ads7828@48 {
+		compatible = "ads7828";
+		status = "okay";
+		reg = <0x48>;
+		diff_input;
+		ext_vref;
+		vref_mv = "2500";
+	};
 };
 
 &i2c2 {
