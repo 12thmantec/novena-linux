@@ -600,5 +600,11 @@ config TILE_SROM
 	  device appear much like a simple EEPROM, and knows
 	  how to partition a single ROM for multiple purposes.
 
+config NOVDS_GPIO
+	tristate "GPIO character device for novds"
+	depends on SOC_IMX6SL
+	default n
+	help
+	  If compiled as a module, it will be called novds_gpio.
 endmenu
 
