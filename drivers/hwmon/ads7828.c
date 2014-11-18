@@ -40,7 +40,7 @@
 #define __ADS7828_USE_THREAD
 
 /* The ADS7828 registers */
-#define ADS7828_NCH		8	/* 8 channels supported */
+#define ADS7828_NCH		5	/* 8 channels supported, but we only use 5 in NOventDS */
 #define ADS7828_CMD_SD_SE	0x80	/* Single ended inputs */
 #define ADS7828_CMD_PD1		0x04	/* Internal vref OFF && A/D ON */
 #define ADS7828_CMD_PD3		0x0C	/* Internal vref ON && A/D ON */
@@ -133,12 +133,12 @@ static ssize_t show_in_all(struct device *dev, struct device_attribute *da,
 
 	/* Print value (in mV as specified in sysfs-interface documentation) */
 	return sprintf(buf, "%d %d %d %d %d %d %d %d\n", 
-			0,
+			(data->adc_input[0] * data->lsb_resol) / 1000,
 			(data->adc_input[1] * data->lsb_resol) / 1000,
 			(data->adc_input[2] * data->lsb_resol) / 1000,
 			(data->adc_input[3] * data->lsb_resol) / 1000,
 			(data->adc_input[4] * data->lsb_resol) / 1000,
-			(data->adc_input[5] * data->lsb_resol) / 1000,
+            0,
 			0,
 			0
 			);
@@ -259,7 +259,7 @@ static int ads7828_update_data(void *arg)
 	u8 cmd;
 	int ch;
 
-#define NO_CHANNEL 2
+#define NO_CHANNEL 3
 	cmd = ads7828_cmd_byte(data->cmd_byte, NO_CHANNEL);
 	adc_data = data->read_channel(client, cmd);
 	sma = sma_init(20, adc_data);
@@ -269,7 +269,7 @@ static int ads7828_update_data(void *arg)
 	while (!kthread_should_stop()) {
 		if (jiffies - last_jiffies > period) {
 			last_jiffies = jiffies;
-			for (ch = 1; ch < ADS7828_NCH - 1; ch++) {
+			for (ch = 0; ch < ADS7828_NCH; ch++) {
 				if (ch == NO_CHANNEL)
 					continue;
 
