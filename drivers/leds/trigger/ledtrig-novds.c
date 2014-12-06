@@ -25,14 +25,17 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include "../leds.h"
+#include <asm/io.h>
+#include <linux/interrupt.h>
+#include <linux/gpio.h>
 
 enum novds_leds_sys_color {
-    NOVDS_LEDS_COLOR_RED = 0x5,
-    NOVDS_LEDS_COLOR_GREEN = 0x6,
-    NOVDS_LEDS_COLOR_BLUE = 0x3,
-    NOVDS_LEDS_COLOR_WHITE = 0x0,
-    NOVDS_LEDS_COLOR_ORANGE = 0x4,
-    NOVDS_LEDS_COLOR_OFF = 0x7,
+	NOVDS_LEDS_COLOR_RED = 0x5,
+	NOVDS_LEDS_COLOR_GREEN = 0x6,
+	NOVDS_LEDS_COLOR_BLUE = 0x3,
+	NOVDS_LEDS_COLOR_WHITE = 0x0,
+	NOVDS_LEDS_COLOR_ORANGE = 0x4,
+	NOVDS_LEDS_COLOR_OFF = 0x7,
 };
 
 struct timer_trig_data {
@@ -64,20 +67,20 @@ int novds_kernel_set_led(int on_data, int state);
 static void novds_led_set_state(unsigned int state)
 {
 	struct timer_trig_data *timer_data = g_timer_data;
-    unsigned int data2, reg2;
-    unsigned int data5, reg5;
+	unsigned int data2, reg2;
+	unsigned int data5, reg5;
 
-    data2 = ((state & 0x1) << 27) | (((state & 0x4) >> 2) << 26);
-    reg2 = *(timer_data->gpio2_data);
-    reg2 &= 0xF3FFFFFF;
-    reg2 |= data2;
-    *(timer_data->gpio2_data) = reg2;
+	data2 = ((state & 0x1) << 27) | (((state & 0x4) >> 2) << 26);
+	reg2 = *(timer_data->gpio2_data);
+	reg2 &= 0xF3FFFFFF;
+	reg2 |= data2;
+	*(timer_data->gpio2_data) = reg2;
 
-    data5 = (((state & 0x2) >> 1) << 5);
-    reg5 = *(timer_data->gpio5_data);
-    reg5 &= 0xFFFFFFDF;
-    reg5 |= data5;
-    *(timer_data->gpio5_data) = reg5;
+	data5 = (((state & 0x2) >> 1) << 5);
+	reg5 = *(timer_data->gpio5_data);
+	reg5 &= 0xFFFFFFDF;
+	reg5 |= data5;
+	*(timer_data->gpio5_data) = reg5;
 }
 
 static void led_novds_function(unsigned long data)
@@ -91,7 +94,7 @@ static void led_novds_function(unsigned long data)
 	if (!timer_data->delay_on || !timer_data->delay_off) {
 		if (!timer_data->on_off) {
 			led_cdev->brightness = LED_OFF;
-            novds_led_set_state(NOVDS_LEDS_COLOR_OFF);
+			novds_led_set_state(NOVDS_LEDS_COLOR_OFF);
 		}
 		return;
 	}
@@ -113,9 +116,9 @@ static void led_novds_function(unsigned long data)
 	led_cdev->brightness = brightness;
 
 	if (brightness)
-        novds_led_set_state(timer_data->on_data);
+		novds_led_set_state(timer_data->on_data);
 	else
-        novds_led_set_state(timer_data->off_data);
+		novds_led_set_state(timer_data->off_data);
 
 	mod_timer(&timer_data->timer, jiffies + msecs_to_jiffies(delay));
 }
@@ -179,7 +182,7 @@ static ssize_t led_on_off_store(struct device *dev,
 	if (sscanf(buf, "%u %d", &on_data, &state) != 2)
 		return -EINVAL;
 
-    novds_kernel_set_led(on_data, state);
+	novds_kernel_set_led(on_data, state);
 
 	return size;
 }
@@ -195,15 +198,15 @@ int novds_kernel_set_led(int on_data, int state)
 	switch (state) {
 	case 0: /* off */
 		led_cdev->brightness = LED_OFF;
-        novds_led_set_state(NOVDS_LEDS_COLOR_OFF);
+		novds_led_set_state(NOVDS_LEDS_COLOR_OFF);
 		break;
 	case 1: /* on */
 		led_cdev->brightness = LED_HALF;
-        novds_led_set_state(on_data);
+		novds_led_set_state(on_data);
 		break;
 	case 2: /* flashing */
 		led_cdev->brightness = LED_HALF;
-        novds_led_set_state(on_data);
+		novds_led_set_state(on_data);
 		timer_data->on_data = on_data;
 		timer_data->off_data = NOVDS_LEDS_COLOR_OFF;
 		mod_timer(&timer_data->timer, jiffies + 1);
@@ -227,36 +230,30 @@ static void timer_trig_activate(struct led_classdev *led_cdev)
 {
 	struct timer_trig_data *timer_data;
 	int rc;
-    struct device_node *np;
-    void __iomem *base;
 
 	timer_data = kzalloc(sizeof(struct timer_trig_data), GFP_KERNEL);
 	if (!timer_data)
 		return;
 
 	g_timer_data = timer_data;
+	//GPIO2_26
+	gpio_request_one(58, GPIOF_OUT_INIT_HIGH, "LED_BLUE");
+	//GPIO2_27
+	gpio_request_one(59, GPIOF_OUT_INIT_HIGH, "LED_GREEN");
+	//GPIO5_5
+	gpio_request_one(133, GPIOF_OUT_INIT_HIGH, "LED_BLUE");
 
-    np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-gpio");
-    if (!np) {
-        pr_warn("failed to find ocotp node\n");
-        goto err_out;
-    }
-    
-    // get the base address of gpio2, it should be the address of data register
-    base = of_iomap(np, 1);
-	//timer_data->gpio2_data = (unsigned int *)(IO_ADDRESS(0x020A0000));
-	timer_data->gpio2_data = (unsigned int *)base;
-    if (!base) {
-        pr_warn("Failed the get the base address of gpio2\n");
-        goto err_out;
-    }
-    base = of_iomap(np, 4);
-	//timer_data->gpio5_data = (unsigned int *)(IO_ADDRESS(0x020AC000));
-	timer_data->gpio5_data = (unsigned int *)base;
-    if (!base) {
-        pr_warn("Failed the get the base address of gpio5\n");
-        goto err_out;
-    }
+	// get the base address of gpio2, it should be the address of data register
+	timer_data->gpio2_data = (unsigned int *)ioremap(0x020A0000, 1);
+	if (!timer_data->gpio2_data) {
+		pr_warn("Failed the get the base address of gpio2\n");
+		goto err_out;
+	}
+	timer_data->gpio5_data = (unsigned int *)ioremap(0x020AC000, 1);
+	if (!timer_data->gpio5_data) {
+		pr_warn("Failed the get the base address of gpio5\n");
+		goto err_out;
+	}
 
 	timer_data->brightness_on = led_get_brightness(led_cdev);
 	if (timer_data->brightness_on == LED_OFF)
@@ -316,7 +313,7 @@ static void timer_trig_deactivate(struct led_classdev *led_cdev)
 }
 
 static struct led_trigger timer_led_trigger = {
-	.name     = "novds",
+	.name	 = "novds",
 	.activate = timer_trig_activate,
 	.deactivate = timer_trig_deactivate,
 };
