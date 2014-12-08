@@ -1,5 +1,5 @@
 #!/bin/sh
-make -j4 zImage dtbs \
+make -j4 zImage dtbs modules \
     CROSS_COMPILE=arm-none-linux-gnueabi- \
     ARCH=arm \
 	&& echo "Constructing bootloader..." \

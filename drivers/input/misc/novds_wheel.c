@@ -39,9 +39,9 @@ struct rotary_encoder {
 	unsigned int irq_a;
 	unsigned int irq_b;
 
-    unsigned int gpio_enter;
+	unsigned int gpio_enter;
 	unsigned int irq_enter;
-    unsigned int inverted_enter;
+	unsigned int inverted_enter;
 
 	bool armed;
 	unsigned char dir;	/* 0 - clockwise, 1 - CCW */
@@ -66,7 +66,7 @@ static void rotary_encoder_report_event(struct rotary_encoder *encoder)
 
 	if (pdata->relative_axis) {
 		input_report_key(encoder->input, encoder->dir ? KEY_F7 : KEY_F8, 1);
-	    input_sync(encoder->input);
+		input_sync(encoder->input);
 		input_report_key(encoder->input, encoder->dir ? KEY_F7 : KEY_F8, 0);
 	} else {
 		unsigned int pos = encoder->pos;
@@ -126,9 +126,9 @@ static irqreturn_t rotary_encoder_enter_irq(int irq, void *dev_id)
 	struct rotary_encoder *encoder = dev_id;
 	int state;
 
-    state = gpio_get_value(encoder->gpio_enter);
-    input_report_key(encoder->input, KEY_ENTER, !state);
-    input_sync(encoder->input);
+	state = gpio_get_value(encoder->gpio_enter);
+	input_report_key(encoder->input, KEY_ENTER, !state);
+	input_sync(encoder->input);
 
 	return IRQ_HANDLED;
 }
@@ -137,6 +137,8 @@ static irqreturn_t rotary_encoder_half_period_irq(int irq, void *dev_id)
 {
 	struct rotary_encoder *encoder = dev_id;
 	int state;
+
+	printk("irq = %d\n", irq);
 
 	state = rotary_encoder_get_state(encoder->pdata);
 
@@ -166,7 +168,7 @@ static struct of_device_id rotary_encoder_of_match[] = {
 MODULE_DEVICE_TABLE(of, rotary_encoder_of_match);
 
 static struct rotary_encoder_platform_data *rotary_encoder_parse_dt(struct device *dev,
-        struct rotary_encoder *encoder)
+		struct rotary_encoder *encoder)
 {
 	const struct of_device_id *of_id =
 				of_match_device(rotary_encoder_of_match, dev);
@@ -224,13 +226,13 @@ static int rotary_encoder_probe(struct platform_device *pdev)
 	if (!pdata) {
 		pdata = rotary_encoder_parse_dt(dev, encoder);
 		if (IS_ERR(pdata)) {
-            kfree(encoder);
+			kfree(encoder);
 			return PTR_ERR(pdata);
-        }
+		}
 
 		if (!pdata) {
 			dev_err(dev, "missing platform data\n");
-            kfree(encoder);
+			kfree(encoder);
 			return -EINVAL;
 		}
 	}
@@ -251,13 +253,13 @@ static int rotary_encoder_probe(struct platform_device *pdev)
 	if (pdata->relative_axis) {
 		set_bit(KEY_F7, input->keybit); //turn the knob to clockwise rotation
 		set_bit(KEY_F8, input->keybit); //turn the knob to counterclockwise rotation
-        /* for knob press key */
-        set_bit(KEY_ENTER, input->keybit);
-	    input->evbit[0] = BIT_MASK(EV_KEY);
+		/* for knob press key */
+		set_bit(KEY_ENTER, input->keybit);
+		input->evbit[0] = BIT_MASK(EV_KEY);
 	} else {
 		input->evbit[0] = BIT_MASK(EV_ABS);
 		input_set_abs_params(encoder->input,
-				     pdata->axis, 0, pdata->steps, 0, 1);
+					pdata->axis, 0, pdata->steps, 0, 1);
 	}
 
 	/* request the GPIOs */
