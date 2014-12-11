@@ -37,20 +37,20 @@
 #define MSP430_NAME "msp430-keys"
 
 /* the i2c addresses of power board */
-#define NOVDS_MSP430_NONE               0x00
-#define NOVDS_MSP430_MODE               0x81
-#define NOVDS_MSP430_ADC_H              0x82
-#define NOVDS_MSP430_ADC_L              0x83
-#define NOVDS_MSP430_AC_ONLINE          0x84
-#define NOVDS_MSP430_POWER_KEY          0x85
-#define NOVDS_MSP430_POWER_OFF          0x86
+#define NOVDS_MSP430_NONE	0x00
+#define NOVDS_MSP430_MODE	0x81
+#define NOVDS_MSP430_ADC_H	0x82
+#define NOVDS_MSP430_ADC_L	0x83
+#define NOVDS_MSP430_AC_ONLINE	0x84
+#define NOVDS_MSP430_POWER_KEY	0x85
+#define NOVDS_MSP430_POWER_OFF	0x86
 
 struct novds_msp430 {
 	struct i2c_client *client;
 	struct input_dev *input;
 
-    int irq_gpio;
-    int irq;
+	int irq_gpio;
+	int irq;
 };
 
 static struct novds_msp430 g_novds_msp430;
@@ -59,7 +59,7 @@ static struct novds_msp430 g_novds_msp430;
  * Write a byte to the MSP430
  */
 static int msp430_write_byte(struct novds_msp430 *pdata,
-			      int reg, u8 val)
+				  int reg, u8 val)
 {
 	int error;
 
@@ -78,7 +78,7 @@ static int msp430_write_byte(struct novds_msp430 *pdata,
  * Read a byte from the MSP430
  */
 static int msp430_read_byte(struct novds_msp430 *pdata,
-			     int reg, u8 *val)
+				 int reg, u8 *val)
 {
 	int error;
 
@@ -114,56 +114,56 @@ static irqreturn_t msp430_irq_handler(int irq, void *dev_id)
 	if (!reg)
 		return IRQ_HANDLED;
 
-    switch (reg) {
-    case 1:
-        input_report_key(pdata->input, KEY_F9, 1);
-	    input_sync(pdata->input);
-        input_report_key(pdata->input, KEY_F9, 0);
-	    input_sync(pdata->input);
-        break;
-    case 2:
-        input_report_key(pdata->input, KEY_F6, 1);
-	    input_sync(pdata->input);
-        input_report_key(pdata->input, KEY_F6, 0);
-	    input_sync(pdata->input);
-        break;
-    }
+	switch (reg) {
+	case 1:
+		input_report_key(pdata->input, KEY_F9, 1);
+		input_sync(pdata->input);
+		input_report_key(pdata->input, KEY_F9, 0);
+		input_sync(pdata->input);
+		break;
+	case 2:
+		input_report_key(pdata->input, KEY_F6, 1);
+		input_sync(pdata->input);
+		input_report_key(pdata->input, KEY_F6, 0);
+		input_sync(pdata->input);
+		break;
+	}
 
 	return IRQ_HANDLED;
 }
 
 static ssize_t novds_msp430_show_aconline(struct kobject *kobj, 
-        struct kobj_attribute *attr, char *buf)  
+		struct kobj_attribute *attr, char *buf)  
 {  
 	u8 reg = 1;
 
 	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_AC_ONLINE, &reg);
 
-    return sprintf(buf, "%d", !!reg);
+	return sprintf(buf, "%d", !!reg);
 }  
 static ssize_t novds_msp430_show_battery(struct kobject *kobj, 
-        struct kobj_attribute *attr, char *buf)  
+		struct kobj_attribute *attr, char *buf)  
 {  
 	u8 h, l;
-    unsigned short battery = 0;
-    static int cache = 0;
+	unsigned short battery = 0;
+	static int cache = 0;
 
 	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_H, &h);
 	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_L, &l);
 
-    battery = (h << 8) | (l << 0);
+	battery = (h << 8) | (l << 0);
 
-    if (battery == 0)
-        battery = cache;
+	if (battery == 0)
+		battery = cache;
 
-    cache = battery;
+	cache = battery;
 
-    return sprintf(buf, "%d", battery);
+	return sprintf(buf, "%d", battery);
 }  
 
 
 #define MSP430_ATTR(name, mode, show, store) \
-    struct kobj_attribute msp430_attr_##name = __ATTR(name, mode, show, store);
+	struct kobj_attribute msp430_attr_##name = __ATTR(name, mode, show, store);
 
 static MSP430_ATTR(aconline, 0444, novds_msp430_show_aconline, NULL);
 static MSP430_ATTR(battery,  0444, novds_msp430_show_battery, NULL);
@@ -171,13 +171,13 @@ static MSP430_ATTR(battery,  0444, novds_msp430_show_battery, NULL);
 static struct kobject *novds_msp430_kobj;
 
 static struct attribute *novds_msp430_attrs[] = {
-        &msp430_attr_aconline.attr,
-        &msp430_attr_battery.attr,
-        NULL,   /* need to NULL terminate the list of attributes */
+		&msp430_attr_aconline.attr,
+		&msp430_attr_battery.attr,
+		NULL,   /* need to NULL terminate the list of attributes */
 };
 
 static struct attribute_group novds_msp430_attr_group = {
-        .attrs = novds_msp430_attrs,
+		.attrs = novds_msp430_attrs,
 };
 
 static int novds_msp430_probe(struct i2c_client *client,
@@ -198,8 +198,8 @@ static int novds_msp430_probe(struct i2c_client *client,
 
 	pdata = &g_novds_msp430;
 
-    /* This interrupt is from MSP430, the pin CPU_INT, just for power key */
-    pdata->irq_gpio = of_get_named_gpio(np, "irq-gpios", 0);
+	/* This interrupt is from MSP430, the pin CPU_INT, just for power key */
+	pdata->irq_gpio = of_get_named_gpio(np, "irq-gpios", 0);
 
 	pdata->client = client;
 
@@ -210,11 +210,11 @@ static int novds_msp430_probe(struct i2c_client *client,
 
 	pdata->input = input;
 
-    pdata->input->evbit[0] = BIT_MASK(EV_KEY);
-    /* for power key */
-    set_bit(KEY_F6, pdata->input->keybit);
-    /* for standy key */
-    set_bit(KEY_F9, pdata->input->keybit);
+	pdata->input->evbit[0] = BIT_MASK(EV_KEY);
+	/* for power key */
+	set_bit(KEY_F6, pdata->input->keybit);
+	/* for standy key */
+	set_bit(KEY_F9, pdata->input->keybit);
 
 	input->name = client->name;
 	input->id.bustype = BUS_I2C;
@@ -224,20 +224,20 @@ static int novds_msp430_probe(struct i2c_client *client,
 
 	input_set_drvdata(input, pdata);
 
-    error = devm_gpio_request_one(dev, pdata->irq_gpio,        
-                    GPIOF_DIR_IN, "msp430");
-    if (error) {
-            dev_err(dev, "failed to request IRQ GPIO: %d\n",
-                                error);
-                return error;
-    }
+	error = devm_gpio_request_one(dev, pdata->irq_gpio,		
+					GPIOF_DIR_IN, "msp430");
+	if (error) {
+			dev_err(dev, "failed to request IRQ GPIO: %d\n",
+								error);
+				return error;
+	}
 
-    pdata->irq = gpio_to_irq(pdata->irq_gpio);
+	pdata->irq = gpio_to_irq(pdata->irq_gpio);
 
 	error = devm_request_threaded_irq(dev, pdata->irq, NULL, msp430_irq_handler,
-					    IRQF_TRIGGER_RISING |
+						IRQF_TRIGGER_RISING |
 						IRQF_ONESHOT,
-					    client->name, pdata);
+						client->name, pdata);
 	if (error) {
 		dev_err(dev, "Unable to claim irq %d; error %d\n",
 			client->irq, error);
@@ -251,8 +251,8 @@ static int novds_msp430_probe(struct i2c_client *client,
 		return error;
 	}
 
-    novds_msp430_kobj = kobject_create_and_add("novds_msp430", kernel_kobj);
-    error = sysfs_create_group(novds_msp430_kobj, &novds_msp430_attr_group);
+	novds_msp430_kobj = kobject_create_and_add("novds_msp430", kernel_kobj);
+	error = sysfs_create_group(novds_msp430_kobj, &novds_msp430_attr_group);
 
 	return 0;
 }
