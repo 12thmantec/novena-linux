@@ -33,6 +33,7 @@
 #include <linux/input.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
+#include <linux/pm.h>
 
 #define MSP430_NAME "msp430-keys"
 
@@ -93,6 +94,12 @@ static int msp430_read_byte(struct novds_msp430 *pdata,
 	*val = (u8)error;
 
 	return 0;
+}
+void msp430_pm_power_off(void)
+{
+	unsigned char power_off = 0;
+	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_POWER_OFF, &power_off);
+	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_NONE, &power_off);
 }
 
 /*
@@ -253,6 +260,8 @@ static int novds_msp430_probe(struct i2c_client *client,
 
 	novds_msp430_kobj = kobject_create_and_add("novds_msp430", kernel_kobj);
 	error = sysfs_create_group(novds_msp430_kobj, &novds_msp430_attr_group);
+
+	pm_power_off = msp430_pm_power_off;
 
 	return 0;
 }
