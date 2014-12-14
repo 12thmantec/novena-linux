@@ -99,6 +99,7 @@ static irqreturn_t rotary_encoder_irq(int irq, void *dev_id)
 	int state;
 
 	state = rotary_encoder_get_state(encoder->pdata);
+	printk("irq = %d, state = %d\n", irq, state);
 
 	switch (state) {
 	case 0x0:
@@ -138,11 +139,15 @@ static irqreturn_t rotary_encoder_half_period_irq(int irq, void *dev_id)
 	struct rotary_encoder *encoder = dev_id;
 	int state;
 
-	printk("irq = %d\n", irq);
 
 	state = rotary_encoder_get_state(encoder->pdata);
 
 	switch (state) {
+	case 0x01:
+	case 0x02:
+		if (state != encoder->last_stable) {
+			encoder->dir = (encoder->last_stable + state) & 0x01;
+		}
 	case 0x00:
 	case 0x03:
 		if (state != encoder->last_stable) {
@@ -150,13 +155,11 @@ static irqreturn_t rotary_encoder_half_period_irq(int irq, void *dev_id)
 			encoder->last_stable = state;
 		}
 		break;
-
-	case 0x01:
-	case 0x02:
-		encoder->dir = (encoder->last_stable + state) & 0x01;
-		break;
 	}
-
+#if 0
+	printk("irq = %d, state = %d, dir=%d, a,b=%d,%d\n", irq, state, encoder->dir, 
+			!!gpio_get_value(encoder->pdata->gpio_a), !!gpio_get_value(encoder->pdata->gpio_b));
+#endif
 	return IRQ_HANDLED;
 }
 

@@ -205,13 +205,19 @@
 		pinctrl_hog: hoggrp {
 			fsl,pins = <
 				/* Touchscreen interrupt */
-				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13 0xf080
+				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13 0x80000000
 
-				/* GPIO LED */
-				MX6QDL_PAD_EIM_D19__GPIO3_IO19  0x80000000
+				/* zero valve */
+				MX6QDL_PAD_DISP0_DAT5__GPIO4_IO26 0X80000000
 
-				/* User button */
-				MX6QDL_PAD_KEY_COL4__GPIO4_IO14 0x80000000
+				/* water full detector */
+				MX6QDL_PAD_EIM_A16__GPIO2_IO22  0X80000000
+
+				/* backup switch detector */
+				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02 0X80000000
+
+				/* power enable for delivery board */
+				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19 0X80000000
 			>;
 		};
 	};
@@ -411,9 +417,9 @@
 	pinctrl-0 = <&pinctrl_i2c1_1>;
 	status = "okay";
 
-	stmpe610@44 {
+	stmpe811@44 {
 		status = "okay";
-		compatible = "st,stmpe610";
+		compatible = "st,stmpe811";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x44>;
@@ -425,15 +431,15 @@
 
 		stmpe_touchscreen {
 			compatible = "st,stmpe-ts";
-			ts,sample-time = <4>;
-			ts,mod-12b = <1>;
-			ts,ref-sel = <0>;
-			ts,adc-freq = <1>;
-			ts,ave-ctrl = <1>;
-			ts,touch-det-delay = <2>;
-			ts,settling = <2>;
-			ts,fraction-z = <7>;
-			ts,i-drive = <1>;
+			st,sample-time = <4>;
+			st,mod-12b = <1>;
+			st,ref-sel = <0>;
+			st,adc-freq = <1>;
+			st,ave-ctrl = <1>;
+			st,touch-det-delay = <2>;
+			st,settling = <2>;
+			st,fraction-z = <7>;
+			st,i-drive = <1>;
 		};
 	};
 
