@@ -146,13 +146,13 @@
 &uart2 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2_1>;
+	pinctrl-0 = <&pinctrl_uart2_novena>;
 };
 
 &uart3 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart3_1>;
+	pinctrl-0 = <&pinctrl_uart3_novena>;
 };
 
 &uart4 {
@@ -258,6 +258,23 @@
 		};
 	};
 
+	uart2 {
+		pinctrl_uart2_novena: uart2grp-novena {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D26__UART2_TX_DATA   0x1b0b1
+				MX6QDL_PAD_EIM_D27__UART2_RX_DATA   0x1b0b1
+			>;
+		};
+	};
+
+	uart3 {
+		pinctrl_uart3_novena: uart3grp-novena {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D24__UART3_TX_DATA 0x1b0b1
+				MX6QDL_PAD_EIM_D25__UART3_RX_DATA 0x1b0b1
+			>;
+		};
+	};
 	uart4 {
 		pinctrl_uart4_novena: uart4-novena {
 			fsl,pins = <
@@ -414,7 +431,7 @@
 
 &i2c1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c1_1>;
+	pinctrl-0 = <&pinctrl_i2c1_2>;
 	status = "okay";
 
 	stmpe811@44 {
