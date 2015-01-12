@@ -201,6 +201,32 @@
 		};
 	};
 
+	i2c1 {
+		pinctrl_i2c1_novena: i2c1grp-novena {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D21__I2C1_SCL 0x4001b8b1
+				MX6QDL_PAD_EIM_D28__I2C1_SDA 0x4001b8b1
+			>;
+		};
+	};
+	i2c2 {
+		pinctrl_i2c2_novena: i2c2grp-novena {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_EB2__I2C2_SCL 0x4001b8b1
+				MX6QDL_PAD_EIM_D16__I2C2_SDA 0x4001b8b1
+			>;
+		};
+	};
+
+	i2c3 {
+		pinctrl_i2c3_novena: i2c3grp-novena {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D17__I2C3_SCL 0x4001b8b1
+				MX6QDL_PAD_EIM_D18__I2C3_SDA 0x4001b8b1
+			>;
+		};
+	};
+
 	hog {
 		pinctrl_hog: hoggrp {
 			fsl,pins = <
@@ -431,7 +457,7 @@
 
 &i2c1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c1_2>;
+	pinctrl-0 = <&pinctrl_i2c1_novena>;
 	status = "okay";
 
 	stmpe811@44 {
@@ -469,15 +495,13 @@
 		compatible = "ads7828";
 		status = "okay";
 		reg = <0x48>;
-		diff_input;
-		ext_vref;
 		vref_mv = "2500";
 	};
 };
 
 &i2c2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c2_1>;
+	pinctrl-0 = <&pinctrl_i2c2_novena>;
 	status = "okay";
 
 	pmic: pfuze100@08 {
@@ -592,7 +616,7 @@
 
 &i2c3 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c3_1>;
+	pinctrl-0 = <&pinctrl_i2c3_novena>;
 	status = "okay";
 
 	codec: sgtl5000@0a {

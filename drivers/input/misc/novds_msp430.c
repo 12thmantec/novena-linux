@@ -144,7 +144,7 @@ static ssize_t novds_msp430_show_aconline(struct kobject *kobj,
 {  
 	u8 reg = 1;
 
-	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_AC_ONLINE, &reg);
+	//msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_AC_ONLINE, &reg);
 
 	return sprintf(buf, "%d", !!reg);
 }  
@@ -155,8 +155,8 @@ static ssize_t novds_msp430_show_battery(struct kobject *kobj,
 	unsigned short battery = 0;
 	static int cache = 0;
 
-	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_H, &h);
-	msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_L, &l);
+	//msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_H, &h);
+	//msp430_read_byte(&g_novds_msp430, NOVDS_MSP430_ADC_L, &l);
 
 	battery = (h << 8) | (l << 0);
 
