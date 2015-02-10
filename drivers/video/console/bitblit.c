@@ -382,10 +382,10 @@ static void bit_cursor(struct vc_data *vc, struct fb_info *info, int mode,
 
 	if (info->fbops->fb_cursor)
 		err = info->fbops->fb_cursor(info, &cursor);
-
+#if 0
 	if (err)
 		soft_cursor(info, &cursor);
-
+#endif
 	ops->cursor_reset = 0;
 }
 
