@@ -41,7 +41,7 @@ struct novds_gpio_cfg {
 
 static struct novds_gpio_cfg g_novds_gpios[] = {
     {0, 0, 0, NULL}, //unused
-    {MK_GPIO(4, 26), 1, 1, "ZERO_VALVE"}, //zero valve
+    {MK_GPIO(4, 26), 1, 0, "ZERO_VALVE"}, //zero valve
     {MK_GPIO(2, 22), 0, 0, "WATER_FULL"}, // water full detector
     {MK_GPIO(6, 2),  0, 0, "BACKUP_SWITCH"}, // backup switch detector
     {MK_GPIO(4, 19), 1, 0, "DELIVERY_POWER"}, // power enable for delivery board
