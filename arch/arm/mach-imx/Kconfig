@@ -847,6 +847,15 @@ config SOC_VF610
 
 endif
 
+config LINUX_BOOT_PARAM_ADDR
+	hex "The atags param address which passed by u-boot"
+	depends on SOC_IMX6Q
+	default 0x10000100
+
+	help
+	  When select this, the kernel will analyze the params which given
+	  by u-boot even if the kernel had a fdt tree
+
 source "arch/arm/mach-imx/devices/Kconfig"
 
 endmenu

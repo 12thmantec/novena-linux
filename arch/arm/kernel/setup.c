@@ -878,11 +878,22 @@ void __init hyp_mode_check(void)
 void __init setup_arch(char **cmdline_p)
 {
 	const struct machine_desc *mdesc;
+#ifdef CONFIG_LINUX_BOOT_PARAM_ADDR
+	phys_addr_t __real_atags_pointer = (phys_addr_t)CONFIG_LINUX_BOOT_PARAM_ADDR;
+#endif
 
 	setup_processor();
 	mdesc = setup_machine_fdt(__atags_pointer);
+
+	// we need the params which given by u-boot, like the address and size of initrd,
+	// so we should analyze the atags even if the kernel find the fdt
+#ifndef CONFIG_LINUX_BOOT_PARAM_ADDR
 	if (!mdesc)
 		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);
+#else
+	setup_machine_tags(__real_atags_pointer, __machine_arch_type);
+#endif
+
 	machine_desc = mdesc;
 	machine_name = mdesc->name;
 
