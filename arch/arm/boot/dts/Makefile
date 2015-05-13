@@ -134,45 +134,8 @@ dtb-$(CONFIG_ARCH_MVEBU) += armada-370-db.dtb \
 	armada-xp-matrix.dtb \
 	armada-xp-openblocks-ax3-4.dtb
 dtb-$(CONFIG_ARCH_MXC) += \
-	imx25-karo-tx25.dtb \
-	imx25-pdk.dtb \
-	imx27-apf27.dtb \
-	imx27-apf27dev.dtb \
-	imx27-pdk.dtb \
-	imx27-phytec-phycore-som.dtb \
-	imx27-phytec-phycore-rdk.dtb \
-	imx27-phytec-phycard-s-som.dtb \
-	imx27-phytec-phycard-s-rdk.dtb \
-	imx31-bug.dtb \
-	imx51-apf51.dtb \
-	imx51-apf51dev.dtb \
-	imx51-babbage.dtb \
-	imx53-ard.dtb \
-	imx53-evk.dtb \
-	imx53-m53evk.dtb \
-	imx53-mba53.dtb \
-	imx53-qsb.dtb \
-	imx53-smd.dtb \
-	imx6dl-cubox-i.dtb \
-	imx6dl-hummingboard.dtb \
 	imx6dl-novena.dtb \
-	imx6dl-novena-aqs.dtb \
-	imx6dl-sabreauto.dtb \
-	imx6dl-sabresd.dtb \
-	imx6dl-wandboard.dtb \
-	imx6q-arm2.dtb \
-	imx6q-cubox-i.dtb \
-	imx6q-novena.dtb \
-	imx6q-phytec-pbab01.dtb \
-	imx6q-sabreauto.dtb \
-	imx6q-sabrelite.dtb \
-	imx6q-sabresd.dtb \
-	imx6q-sbc6x.dtb \
-	imx6q-udoo.dtb \
-	imx6q-wandboard.dtb \
-	imx6sl-evk.dtb \
-	vf610-cosmic.dtb \
-	vf610-twr.dtb
+	imx6dl-novena-aqs.dtb
 dtb-$(CONFIG_ARCH_MXS) += imx23-evk.dtb \
 	imx23-olinuxino.dtb \
 	imx23-stmp378x_devb.dtb \

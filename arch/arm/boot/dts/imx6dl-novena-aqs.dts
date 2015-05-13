@@ -310,8 +310,8 @@
 		};
 	};
 
-	usdhc2 {
-		pinctrl_usdhc2_novena: usdhc2-novena {
+	usdhc3 {
+		pinctrl_usdhc3_novena: usdhc3-novena {
 			fsl,pins = <
 				MX6QDL_PAD_SD2_CMD__SD2_CMD    0x17059
 				MX6QDL_PAD_SD2_CLK__SD2_CLK    0x10059
@@ -322,8 +322,8 @@
 			>;
 		};
 	};
-	usdhc3 {
-		pinctrl_novena_usdhc3: novena-usdhc3 {
+	usdhc2 {
+		pinctrl_novena_usdhc2: novena-usdhc2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD3_CMD__SD3_CMD	0x17059
 				MX6QDL_PAD_SD3_CLK__SD3_CLK	0x10059
@@ -339,7 +339,7 @@
 			>;
 		};
 
-		pinctrl_novena_usdhc3_100mhz: novena-usdhc3-100mhz {
+		pinctrl_novena_usdhc2_100mhz: novena-usdhc3-100mhz {
 			fsl,pins = <
 				MX6QDL_PAD_SD3_CMD__SD3_CMD	0x170b9
 				MX6QDL_PAD_SD3_CLK__SD3_CLK	0x100b9
@@ -355,7 +355,7 @@
 			>;
 		};
 
-		pinctrl_novena_usdhc3_200mhz: novena-usdhc3-200mhz {
+		pinctrl_novena_usdhc2_200mhz: novena-usdhc3-200mhz {
 			fsl,pins = <
 				MX6QDL_PAD_SD3_CMD__SD3_CMD	0x170f9
 				MX6QDL_PAD_SD3_CLK__SD3_CLK	0x100f9
@@ -413,24 +413,25 @@
 	txd3-skew-ps = <3000>;
 };
 
-/* Removable MicroSD */
+/* iNAND */
 &usdhc2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc2_novena>;
+    pinctrl-names = "default", "state_100mhz", "state_200mhz";
+    pinctrl-0 = <&pinctrl_novena_usdhc2>;
+    pinctrl-1 = <&pinctrl_novena_usdhc2_100mhz>;
+    pinctrl-2 = <&pinctrl_novena_usdhc2_200mhz>;
 	non-removable;
+	bus-width = <1>;
+	card-reset-gpios = <&gpio7 8 1>;
 	vmmc-supply = <&reg_3p3v>;
 	status = "okay";
 };
 
-/* iNAND */
+
+/* Removable MicroSD */
 &usdhc3 {
-        pinctrl-names = "default", "state_100mhz", "state_200mhz";
-        pinctrl-0 = <&pinctrl_novena_usdhc3>;
-        pinctrl-1 = <&pinctrl_novena_usdhc3_100mhz>;
-        pinctrl-2 = <&pinctrl_novena_usdhc3_200mhz>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usdhc3_novena>;
 	non-removable;
-	bus-width = <1>;
-	card-reset-gpios = <&gpio7 8 1>;
 	vmmc-supply = <&reg_3p3v>;
 	status = "okay";
 };

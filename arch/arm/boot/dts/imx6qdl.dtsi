@@ -1176,8 +1176,8 @@
 						>;
 					};
 				};
-
-				usdhc2 {
+/*
+				usdhc3 {
 					pinctrl_usdhc2_1: usdhc2grp-1 {
 						fsl,pins = <
 							MX6QDL_PAD_SD2_CMD__SD2_CMD    0x17059
@@ -1205,7 +1205,7 @@
 					};
 				};
 
-				usdhc3 {
+				usdhc2 {
 					pinctrl_usdhc3_1: usdhc3grp-1 {
 						fsl,pins = <
 							MX6QDL_PAD_SD3_CMD__SD3_CMD    0x17059
@@ -1221,7 +1221,7 @@
 						>;
 					};
 
-					pinctrl_usdhc3_1_100mhz: usdhc3grp-1-100mhz { /* 100Mhz */
+					pinctrl_usdhc3_1_100mhz: usdhc3grp-1-100mhz {
 						fsl,pins = <
 							MX6QDL_PAD_SD3_CMD__SD3_CMD 0x170b9
 							MX6QDL_PAD_SD3_CLK__SD3_CLK 0x100b9
@@ -1236,7 +1236,7 @@
 						>;
 					};
 
-					pinctrl_usdhc3_1_200mhz: usdhc3grp-1-200mhz { /* 200Mhz */
+					pinctrl_usdhc3_1_200mhz: usdhc3grp-1-200mhz {
 						fsl,pins = <
 							MX6QDL_PAD_SD3_CMD__SD3_CMD 0x170f9
 							MX6QDL_PAD_SD3_CLK__SD3_CLK 0x100f9
@@ -1262,6 +1262,7 @@
 						>;
 					};
 				};
+		*/
 
 				usdhc4 {
 					pinctrl_usdhc4_1: usdhc4grp-1 {
@@ -1483,21 +1484,21 @@
 				status = "disabled";
 			};
 
-			usdhc2: usdhc@02194000 {
+			usdhc2: usdhc@02198000 {
 				compatible = "fsl,imx6q-usdhc";
-				reg = <0x02194000 0x4000>;
-				interrupts = <0 23 0x04>;
-				clocks = <&clks 164>, <&clks 164>, <&clks 164>;
+				reg = <0x02198000 0x4000>;
+				interrupts = <0 24 0x04>;
+				clocks = <&clks 165>, <&clks 165>, <&clks 165>;
 				clock-names = "ipg", "ahb", "per";
 				bus-width = <4>;
 				status = "disabled";
 			};
 
-			usdhc3: usdhc@02198000 {
+			usdhc3: usdhc@02194000 {
 				compatible = "fsl,imx6q-usdhc";
-				reg = <0x02198000 0x4000>;
-				interrupts = <0 24 0x04>;
-				clocks = <&clks 165>, <&clks 165>, <&clks 165>;
+				reg = <0x02194000 0x4000>;
+				interrupts = <0 23 0x04>;
+				clocks = <&clks 164>, <&clks 164>, <&clks 164>;
 				clock-names = "ipg", "ahb", "per";
 				bus-width = <4>;
 				status = "disabled";
