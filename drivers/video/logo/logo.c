@@ -20,6 +20,14 @@
 static bool nologo;
 module_param(nologo, bool, 0);
 MODULE_PARM_DESC(nologo, "Disables startup logo");
+int knob_switch_pressed = 0;
+static int knob_switch_pressed_check(char *str)
+{
+	knob_switch_pressed = simple_strtoul(str, NULL, 0);
+
+	return 1;
+}
+__setup("knob_switch_pressed=", knob_switch_pressed_check);
 
 /* logo's are marked __initdata. Use __init_refok to tell
  * modpost that it is intended that this function uses data
@@ -97,6 +105,9 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
 		logo = &logo_m32r_clut224;
 #endif
 	}
+	if (knob_switch_pressed)
+		logo = &logo_linux_diagnostic_clut224;
+
 	return logo;
 }
 EXPORT_SYMBOL_GPL(fb_find_logo);
