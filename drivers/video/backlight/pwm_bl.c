@@ -43,6 +43,8 @@ struct pwm_bl_data {
 	void			(*exit)(struct device *);
 };
 
+struct backlight_device *g_pwm_bl;
+
 static void pwm_backlight_power_on(struct pwm_bl_data *pb, int brightness)
 {
 	int err;
@@ -123,6 +125,28 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
 
 	return 0;
 }
+
+int backlight_update_status_by_value(int brightness)
+{
+#if 0
+	g_pwm_bl->props.brightness = brightness;
+	backlight_update_status(g_pwm_bl);
+#else
+	unsigned int *gpio4 = (unsigned int *)ioremap(0x20A8000, 1);
+	unsigned int data;
+	data = *gpio4;
+#if 0
+	if (brightness)
+		*gpio4 = data | (1 << 15);
+	else
+#endif
+		*gpio4 = data & ~(1 << 15);
+#endif
+	return 0;
+}
+
+EXPORT_SYMBOL_GPL(backlight_update_status_by_value);
+
 
 static int pwm_backlight_get_brightness(struct backlight_device *bl)
 {
@@ -334,6 +358,9 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 	backlight_update_status(bl);
 
 	platform_set_drvdata(pdev, bl);
+	g_pwm_bl = bl;
+	backlight_update_status_by_value(0);
+
 	return 0;
 
 err_gpio:

@@ -602,7 +602,7 @@ config TILE_SROM
 
 config NOVDS_GPIO
 	tristate "GPIO character device for novds"
-	depends on SOC_IMX6SL
+	depends on SOC_IMX6Q
 	default n
 	help
 	  If compiled as a module, it will be called novds_gpio.
