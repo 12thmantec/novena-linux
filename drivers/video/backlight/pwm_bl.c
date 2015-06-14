@@ -135,11 +135,11 @@ int backlight_update_status_by_value(int brightness)
 	unsigned int *gpio4 = (unsigned int *)ioremap(0x20A8000, 1);
 	unsigned int data;
 	data = *gpio4;
-#if 0
+
 	if (brightness)
 		*gpio4 = data | (1 << 15);
 	else
-#endif
+
 		*gpio4 = data & ~(1 << 15);
 #endif
 	return 0;
