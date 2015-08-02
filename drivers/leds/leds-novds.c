@@ -33,7 +33,7 @@ static struct gpio_led_platform_data novds_leds_data = {
 };
 
 static struct platform_device novds_leds_dev = {
-	.name = "leds-gpio",
+	.name = "leds-novds",
 	.id = -1,
 	.dev = {
 		.platform_data = &novds_leds_data,

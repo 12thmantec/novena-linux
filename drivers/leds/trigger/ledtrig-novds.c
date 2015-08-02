@@ -241,7 +241,7 @@ static void timer_trig_activate(struct led_classdev *led_cdev)
 	//GPIO2_27
 	gpio_request_one(59, GPIOF_OUT_INIT_HIGH, "LED_GREEN");
 	//GPIO5_5
-	gpio_request_one(133, GPIOF_OUT_INIT_HIGH, "LED_BLUE");
+	gpio_request_one(133, GPIOF_OUT_INIT_HIGH, "LED_RED");
 
 	// get the base address of gpio2, it should be the address of data register
 	timer_data->gpio2_data = (unsigned int *)ioremap(0x020A0000, 1);
@@ -313,7 +313,7 @@ static void timer_trig_deactivate(struct led_classdev *led_cdev)
 }
 
 static struct led_trigger timer_led_trigger = {
-	.name	 = "novds",
+	.name	 = "ledtrig-novds",
 	.activate = timer_trig_activate,
 	.deactivate = timer_trig_deactivate,
 };
