@@ -129,6 +129,7 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
 int backlight_update_status_by_value(int brightness)
 {
 #if 0
+#if 0
 	g_pwm_bl->props.brightness = brightness;
 	backlight_update_status(g_pwm_bl);
 #else
@@ -141,6 +142,7 @@ int backlight_update_status_by_value(int brightness)
 	else
 
 		*gpio4 = data & ~(1 << 15);
+#endif
 #endif
 	return 0;
 }
@@ -246,6 +248,7 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 	struct backlight_device *bl;
 	struct pwm_bl_data *pb;
 	int ret;
+	const char *spec_name = NULL;
 
 	if (!data) {
 		ret = pwm_backlight_parse_dt(&pdev->dev, &defdata);
@@ -253,6 +256,8 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "failed to find platform data\n");
 			return ret;
 		}
+
+		spec_name = of_get_property(pdev->dev.of_node, "spec-name", NULL);
 
 		data = &defdata;
 	}
@@ -339,7 +344,10 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 	memset(&props, 0, sizeof(struct backlight_properties));
 	props.type = BACKLIGHT_RAW;
 	props.max_brightness = data->max_brightness;
-	bl = backlight_device_register(dev_name(&pdev->dev), &pdev->dev, pb,
+	if (!spec_name)
+		spec_name = dev_name(&pdev->dev);
+
+	bl = backlight_device_register(spec_name, &pdev->dev, pb,
 				       &pwm_backlight_ops, &props);
 	if (IS_ERR(bl)) {
 		dev_err(&pdev->dev, "failed to register backlight\n");
