@@ -93,7 +93,7 @@
 		novds-alarm-leds {
 			label = "colors";
 			default-state = "off";
-			gpios = <&gpio2 27 1>, <&gpio5 5 1>, <&gpio2 26 1>;
+			gpios = <&gpio2 27 0>, <&gpio5 5 1>, <&gpio2 26 1>;
 			linux,default-trigger = "ledtrig-novds";
 		};
 	};
